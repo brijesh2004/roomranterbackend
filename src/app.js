@@ -10,7 +10,7 @@ app.use(require('./router/auth'));
 app.use(
   cors({
     credentials:true,
-    origin:['https://master--ornate-kheer-5bbba7.netlify.app/'],
+    origin:'https://master--ornate-kheer-5bbba7.netlify.app/',
     methods:['GET','POST'],
   })
 )
