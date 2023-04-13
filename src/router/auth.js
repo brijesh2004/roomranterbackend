@@ -10,7 +10,7 @@ router.use(cookieParser());
 
 const { User, Postroom } = require("../model/register");
 const authenticate = require("../middelware/authenticate");
-app.use(
+router.use(
     cors({
       credentials:true,
       origin:['https://master--ornate-kheer-5bbba7.netlify.app/'],
