@@ -14,7 +14,7 @@ const authenticate = require("../middelware/authenticate");
 router.use(
     cors({
       credentials:true,
-      origin:['http://localhost:3000'],
+      origin:['https://roomrenter.netlify.app'],
       methods:['GET','POST'],
     })
   )
@@ -23,7 +23,7 @@ router.get('/', (req, res) => {
 })
 
 router.post("/register", async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     // console.log(req.body);
     const { name, email, password, cpassword } = req.body;
 
@@ -58,7 +58,7 @@ router.post("/register", async (req, res) => {
 
 
 router.post('/signin', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     try {
         const { email, password } = req.body;
         // console.log(req.body);
@@ -79,11 +79,9 @@ router.post('/signin', async (req, res) => {
             //   cookie store  
             res.cookie("jwttoken", token, {
                 expires: new Date(Date.now() + 25892000000),
-                httpOnly: true
+                httpOnly: true,
+                sameSite:'none', 
             });
-
-
-   
             if (!isMatch) {
                 res.status(400).json({ error: "invalid user credentia" });
             }
@@ -103,13 +101,13 @@ router.post('/signin', async (req, res) => {
 })
 
 router.get('/about' , authenticate , (req,res) =>{
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     // console.log("Hello My about");
     res.send(req.rootUser);
 })
 
 router.post('/postroom', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     console.log(req.body);
     const { Name,email, City,Pincode, Type, Place, HouseNumber, MobileNumber, RoomType } = req.body;
     
@@ -150,12 +148,12 @@ router.post('/postroom', async (req, res) => {
 })
 
 router.get('/profile' , authenticate , (req,res) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     res.send(req.rootUser);
 })
 
 router.get('/api', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     try {
       // Query the database for all data
       const data = await Postroom.find();
@@ -170,7 +168,7 @@ router.get('/api', async (req, res) => {
   });
 
 router.get("/logout" ,(req, res)=>{
-    res.header('Access-Control-Allow-Origin', 'http://localhost:3000');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     // console.log("hello my logout page");
   res.clearCookie('jwttoken',{path:'/'})
   res.status(200).send("user logout");
