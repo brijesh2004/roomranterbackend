@@ -18,27 +18,12 @@ router.use(
       methods:['GET','POST'],
     })
   )
-  router.use(function(req, res, next) {
-    res.header('Access-Control-Allow-Origin', 'https://master--roomrenter.netlify.app');
-    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
-    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
-
-    //intercepts OPTIONS method
-    if ('OPTIONS' === req.method) {
-        //respond with 200
-        res.sendStatus(200);
-    }
-    else {
-        //move on
-        next();
-    }
-}); 
 router.get('/', (req, res) => {
     res.send("<h1>Hello World</h1>");
 })
 
 router.post("/register", async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     // console.log(req.body);
     const { name, email, password, cpassword } = req.body;
 
@@ -73,7 +58,7 @@ router.post("/register", async (req, res) => {
 
 
 router.post('/signin', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     try {
         const { email, password } = req.body;
         // console.log(req.body);
@@ -116,13 +101,13 @@ router.post('/signin', async (req, res) => {
 })
 
 router.get('/about' , authenticate , (req,res) =>{
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     // console.log("Hello My about");
     res.send(req.rootUser);
 })
 
 router.post('/postroom', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     console.log(req.body);
     const { Name,email, City,Pincode, Type, Place, HouseNumber, MobileNumber, RoomType } = req.body;
     
@@ -163,12 +148,12 @@ router.post('/postroom', async (req, res) => {
 })
 
 router.get('/profile' , authenticate , (req,res) => {
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     res.send(req.rootUser);
 })
 
 router.get('/api', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     try {
       // Query the database for all data
       const data = await Postroom.find();
@@ -183,7 +168,7 @@ router.get('/api', async (req, res) => {
   });
 
 router.get("/logout" ,(req, res)=>{
-    res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
     // console.log("hello my logout page");
   res.clearCookie('jwttoken',{path:'/'})
   res.status(200).send("user logout");
