@@ -18,6 +18,21 @@ router.use(
       methods:['GET','POST'],
     })
   )
+  router.use(function(req, res, next) {
+    res.header('Access-Control-Allow-Origin', 'https://master--roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Methods', 'GET, POST, PUT, DELETE, OPTIONS');
+    res.header('Access-Control-Allow-Headers', 'Content-Type, Authorization, Content-Length, X-Requested-With');
+
+    //intercepts OPTIONS method
+    if ('OPTIONS' === req.method) {
+        //respond with 200
+        res.sendStatus(200);
+    }
+    else {
+        //move on
+        next();
+    }
+}); 
 router.get('/', (req, res) => {
     res.send("<h1>Hello World</h1>");
 })
