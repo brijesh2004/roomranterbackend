@@ -39,7 +39,7 @@ router.get('/', (req, res) => {
 })
 
 router.post("/register", async (req, res) => {
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     // console.log(req.body);
     const { name, email, password, cpassword } = req.body;
 
@@ -97,6 +97,7 @@ router.post('/signin', async (req, res) => {
                 expires: new Date(Date.now() + 25892000000),
                 httpOnly: true,
                 sameSite:'none', 
+                secure:true
             });
             if (!isMatch) {
                 res.status(400).json({ error: "invalid user credentia" });
@@ -117,7 +118,7 @@ router.post('/signin', async (req, res) => {
 })
 
 router.get('/about' , authenticate , (req,res) =>{
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     // console.log("Hello My about");
     res.send(req.rootUser);
 })
