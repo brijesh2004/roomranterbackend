@@ -14,7 +14,7 @@ const authenticate = require("../middelware/authenticate");
 router.use(
     cors({
       credentials:true,
-      origin:['https://roomrenter.netlify.app'],
+      origin:['https://roomrenter.onrender.com'],
       methods:['GET','POST'],
     })
   )
@@ -58,7 +58,7 @@ router.post("/register", async (req, res) => {
 
 
 router.post('/signin', async (req, res) => {
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     try {
         const { email, password } = req.body;
         // console.log(req.body);
@@ -107,7 +107,7 @@ router.get('/about' , authenticate , (req,res) =>{
 })
 
 router.post('/postroom', async (req, res) => {
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     console.log(req.body);
     const { Name,email, City,Pincode, Type, Place, HouseNumber, MobileNumber, RoomType } = req.body;
     
@@ -148,12 +148,12 @@ router.post('/postroom', async (req, res) => {
 })
 
 router.get('/profile' , authenticate , (req,res) => {
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     res.send(req.rootUser);
 })
 
 router.get('/api', async (req, res) => {
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     try {
       // Query the database for all data
       const data = await Postroom.find();
@@ -168,7 +168,7 @@ router.get('/api', async (req, res) => {
   });
 
 router.get("/logout" ,(req, res)=>{
-    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.netlify.app');
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     // console.log("hello my logout page");
   res.clearCookie('jwttoken',{path:'/'})
   res.status(200).send("user logout");
