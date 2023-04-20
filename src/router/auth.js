@@ -11,13 +11,29 @@ router.use(cookieParser());
 
 const { User, Postroom } = require("../model/register");
 const authenticate = require("../middelware/authenticate");
-router.use(
-    cors({
-      credentials:true,
-      origin:['https://roomrenter.onrender.com'],
-      methods:['GET','POST'],
-    })
-  )
+// router.use(
+//     cors({
+//       credentials:true,
+//       origin:['https://roomrenter.onrender.com'],
+//       methods:['GET','POST'],
+//     })
+//   )
+
+// Enable CORS requests from specific domains
+const allowedOrigins = ['https://roomrenter.onrender.com'];
+router.use(cors({
+  origin: function(origin, callback) {
+    // allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
+    }
+    return callback(null, true);
+  }
+}));
+
+
 router.get('/', (req, res) => {
     res.send("<h1>Hello World</h1>");
 })
