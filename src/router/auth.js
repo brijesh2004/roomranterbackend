@@ -15,7 +15,7 @@ router.use(
     cors({
       credentials:true,
       origin:['https://roomrenter.onrender.com'],
-      methods:['GET','POST'],
+      methods:['GET','POST','DELETE'],
     })
   )
 router.get('/', (req, res) => {
@@ -155,6 +155,7 @@ router.get('/profile' , authenticate , (req,res) => {
 
 router.get('/api', async (req, res) => {
     res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
+    // res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     try {
       // Query the database for all data
       const data = await Postroom.find();
@@ -168,12 +169,53 @@ router.get('/api', async (req, res) => {
     }
   });
 
+router.post('/changePass', async (req,res)=>{
+    try{
+    const {email , newpassword , cnewpassword} = req.body;
+
+    const UserRegister = await User.findOne({email:email});
+    
+    if(!UserRegister){
+        return res.status(400).json({ error: 'Invalid  Email' });
+    }
+   if(newpassword!==cnewpassword){
+    return res.status(400).json({ error: 'Password are not matching' });
+   }
+    UserRegister.password = newpassword;
+    UserRegister.cpassword = cnewpassword;
+   
+    await UserRegister.save();
+    res.status(200).json({ message: 'Password reset successfully' });
+    }
+    catch(err){
+        res.status(400).send(err);
+    }
+
+})
+
+  router.delete('/api/myModel/:id', async (req, res) => {
+    res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
+    console.log("called");
+    try {
+      const deletedData = await Postroom.findByIdAndRemove(req.params.id);
+      if (!deletedData) {
+        return res.status(404).send('Data not found');
+      }
+      res.send(deletedData);
+    } catch (error) {
+        console.log(req.params.id);
+      res.status(500).send(error.message);
+    }
+  });
+
+
 router.get("/logout" ,(req, res)=>{
     res.header('Access-Control-Allow-Origin', 'https://roomrenter.onrender.com');
     // console.log("hello my logout page");
   res.clearCookie('jwttoken',{path:'/'})
   res.status(200).send("user logout");
 })
+
 
 
 module.exports = router;
