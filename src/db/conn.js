@@ -1,8 +1,7 @@
 const mongoose = require("mongoose");
-// const dotenv = require("dotenv");
-// dotenv.config({path:'./config.env'});
-const DB = process.env.DATABASE;
-mongoose.connect('mongodb+srv://brijesh123:RoomSearch2023@cluster0.ojzxsmf.mongodb.net/?retryWrites=true&w=majority', {
+require('dotenv').config();
+const DB = process.env.DBPATH;
+mongoose.connect(`${DB}`, {
     useNewUrlParser: true,
     // useCreateIndex:true,
     // useUnifiedTopology:true,
