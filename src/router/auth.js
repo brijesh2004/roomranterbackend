@@ -236,6 +236,7 @@ router.post("/roomupload", async (req, res) => {
                 );
 
                 const referenceID = addUserRoom[0]._id;
+                const userId = userRoom._id;
 
                 if (!allroomsdata) {
                     // If the collection is empty, create a new document
@@ -255,6 +256,7 @@ router.post("/roomupload", async (req, res) => {
                         location,
                         price,
                         referenceID,
+                        userId
                     });
 
                     await allroomsdata.save();
@@ -271,7 +273,8 @@ router.post("/roomupload", async (req, res) => {
                         date,
                         location,
                         price,
-                        referenceID
+                        referenceID,
+                        userId
                     );
                     await allroomsdata.save();
                     
@@ -328,19 +331,35 @@ router.delete('/delete/myModel/:id', async (req, res) => {
             { $pull: { allrooms: { referenceID: roomId } } },
             { new: true }
         );
-
-
         res.send(updatedUser);
     } catch (error) {
         res.status(500).send(error.message);
     }
 });
 
+router.get('/user/:id' , async (req , res)=>{
+    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
+    try{
+        const userId = req.params.id;
+        const user =await User.findById(userId);
+        res.status(200).json({mess:user})
+    }
+    catch{
+        
+        res.status(200).json({err:"error"})
+
+    }
+})
 
 
 router.get("/logout", (req, res) => {
     res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
-    res.clearCookie('jwttoken', { path: '/' })
+    res.cookie("jwttoken", token, {
+        expires: new Date(Date.now()),
+        httpOnly: true,
+        sameSite: 'none',
+        secure: true
+    });
     res.status(200).send("user logout");
 })
 

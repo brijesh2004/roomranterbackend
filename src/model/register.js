@@ -1,6 +1,7 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
 const bcrypt = require("bcryptjs");
+const { type } = require("express/lib/response");
 require('dotenv').config();
 
 const userSchema = new mongoose.Schema({
@@ -104,6 +105,9 @@ const alltheRoomSchema = new mongoose.Schema({
             },
             referenceID:{
                 type:String,
+            },
+            userId:{
+                type:String
             }
         }
     ]
@@ -124,7 +128,8 @@ alltheRoomSchema.methods.addAllRoomsinArray = async function (roomrenterName, co
             date: new Date(date),
             location,
             price,
-            referenceID
+            referenceID,
+            userId
         };
         this.allrooms.unshift(newRoom)
         await this.save();
