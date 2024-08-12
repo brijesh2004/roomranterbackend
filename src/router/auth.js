@@ -5,6 +5,7 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const cookieParser = require('cookie-parser');
 require('dotenv').config()
+const NodeCache = require("node-cache");
 
 require("../db/conn");
 router.use(cookieParser());
@@ -19,6 +20,9 @@ router.use(
         allowedHeaders: ["Content-Type", "Authorization"]
     })
 )
+const myCache = new NodeCache();
+
+
 router.get('/', (req, res) => {
     res.send("<h1>Hello World</h1>");
 })
@@ -114,9 +118,18 @@ router.get('/api', async (req, res) => {
     
     try {
         // Query the database for all data
-        const data = await AlltheRoom.find();
 
-        // Send the data as the response
+        let data;
+        if(myCache.has("data")){
+          data = JSON.parse(myCache.get("data"));  
+        } 
+        else{
+            data = await AlltheRoom.find();
+            myCache.set("data" , JSON.stringify(data));
+        }
+
+        // to delete 
+        // myCache.del("data");
         res.send(data);
     } catch (err) {
         console.error(err);
@@ -282,7 +295,8 @@ router.post("/roomupload", async (req, res) => {
 
                
                 await userRoom.save();
-            
+                // deleting the chache
+                myCache.del("data");
                 res.status(201).json({ message: "Room added Successfully" });
             }
         }
@@ -331,12 +345,16 @@ router.delete('/delete/myModel/:id', async (req, res) => {
             { $pull: { allrooms: { referenceID: roomId } } },
             { new: true }
         );
+        // deleting the chache
+        myCache.del("data");
         res.send(updatedUser);
     } catch (error) {
         res.status(500).send(error.message);
     }
 });
 
+
+// feching the others user details
 router.get('/user/:id' , async (req , res)=>{
     res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
     try{
@@ -355,7 +373,7 @@ router.get('/user/:id' , async (req , res)=>{
 router.get("/logout", (req, res) => {
     res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
     res.cookie("jwttoken", token, {
-        expires: new Date(Date.now()),
+        expires: 0,
         httpOnly: true,
         sameSite: 'none',
         secure: true
