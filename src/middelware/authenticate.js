@@ -1,16 +1,16 @@
 const jwt = require("jsonwebtoken");
-const {User,Postroom} = require("../model/register");
+const {User} = require("../model/register");
+require("dotenv").config();
 
 const authenticate = async (req , res , next) => {
     try{
         const token = req.cookies.jwttoken;
-        const verifyToken = jwt.verify(token , "iambrijeshsinghfrommadanmohanmalaviya");
-        const rootUser = await User.findOne({_id : verifyToken._id,"tokens.token":token});
+        const verifyToken = jwt.verify(token , `${process.env.TOKENKEY}`);
+        const rootUser = await User.findById({_id : verifyToken.id});
 
         if(!rootUser){
             throw new Error("User Not Found");
         }
-
         req.token = token;
         req.rootUser = rootUser;
         req.userID = rootUser._id;
@@ -19,8 +19,8 @@ const authenticate = async (req , res , next) => {
 
     }
     catch(err){
-        res.status(401).send("Unauthorized : No token Provided");
-        // console.log("error");
+       return res.status(401).send("Unauthorized : No token Provided");
+        
     }
 }
 

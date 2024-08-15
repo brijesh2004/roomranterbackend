@@ -1,25 +1,28 @@
 const jwt = require("jsonwebtoken");
 const express = require("express");
 const cors = require("cors");
+require('dotenv').config()
 const router = express.Router();
 const bcrypt = require("bcryptjs");
 const cookieParser = require('cookie-parser');
-require('dotenv').config()
+
 const NodeCache = require("node-cache");
 
 require("../db/conn");
 router.use(cookieParser());
+const secret = process.env.TOKENKEY;
 
-const { User, AlltheRoom } = require("../model/register");
+const { User, UserRoom } = require("../model/register");
+
 const authenticate = require("../middelware/authenticate");
 router.use(
     cors({
-        credentials: true,
-        origin: [`${process.env.LOCALPATH}`],
-        methods: ['GET', 'POST', 'DELETE'],
-        allowedHeaders: ["Content-Type", "Authorization"]
+        origin: process.env.LOCALPATH,
+        methods: ['GET', 'POST', 'DELETE','UPDATE'],
+        credentials:true
     })
 )
+
 const myCache = new NodeCache();
 
 
@@ -28,8 +31,7 @@ router.get('/', (req, res) => {
 })
 
 router.post("/register", async (req, res) => {
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
-    const { name, email, password, cpassword } = req.body;
+    let { name, email, password, cpassword } = req.body;
 
     if (!name || !email || !password || !cpassword) {
         return res.status(422).json({ error: "All filled is required" });
@@ -43,16 +45,24 @@ router.post("/register", async (req, res) => {
             return res.status(422).json({ error: "Password are not matching" });
         }
         else {
-            const user = new User({ name, email, password, cpassword })
+             // hashing the password 
+            password  = await bcrypt.hash(password , 10);
 
-            // hashing the password 
-
+            const user = new User({ name, email, password});
             await user.save();
-            res.status(201).json({ message: "User Registerd Successfully" });
+            const token = jwt.sign({ id: user._id }, secret);
+            //   cookie store  
+            res.cookie("jwttoken", token, {
+                expires: new Date(Date.now() + 25892000000),
+                httpOnly: true,
+                sameSite: 'none',
+                secure: true
+            });
+           return res.status(201).json({ message: "User Registerd Successfully" });
         }
     }
     catch (err) {
-        res.status(500).json({ error: "Server Error" });
+       return res.status(500).json({ error: "Server Error" });
     }
 
 })
@@ -60,7 +70,6 @@ router.post("/register", async (req, res) => {
 
 
 router.post('/signin', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
     try {
         const { email, password } = req.body;
         if (!email || !password) {
@@ -70,8 +79,11 @@ router.post('/signin', async (req, res) => {
         const userLogin = await User.findOne({ email: email });
         if (userLogin) {
             const isMatch = await bcrypt.compare(password, userLogin.password);
-            const token = await userLogin.generateAutoToken();
+            if(!isMatch){
+                 return res.status(400).json({error:"Invalid User Credential"})
+            }
 
+            const token = jwt.sign({ id: userLogin._id }, secret);
             //   cookie store  
             res.cookie("jwttoken", token, {
                 expires: new Date(Date.now() + 25892000000),
@@ -79,61 +91,63 @@ router.post('/signin', async (req, res) => {
                 sameSite: 'none',
                 secure: true
             });
-            if (!isMatch) {
-                res.status(400).json({ error: "invalid user credentia" });
-            }
-            else {
-                res.json({ message: "user signin Successfully" });
-            }
+            return res.json({ message: "user signin Successfully" });
         }
         else {
             res.status(400).json({ error: "invalid user credentials" });
         }
     } catch (err) {
 
-        res.status(500).json({ error: "Sever error" });
+        return res.status(500).json({ error: "Sever error" });
     }
 })
+
 
 router.get('/about', authenticate, (req, res) => {
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
-    res.send(req.rootUser);
-})
-
-
-
-router.get('/profile', authenticate, (req, res) => {
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
-    const { _id, name, email, rooms } = req.rootUser;
-    const data = {
-        _id, name, email, rooms
+    try{
+        const data = req.rootUser;
+        return res.status(200).json({data:data.name});
     }
-    res.send(data);
+    catch(err){
+      return res.status(401).json({err:"Unauthorized"});
+    }
+});
+
+
+
+router.get('/profile', authenticate, async (req, res) => {
+    try{
+        const { _id, name, email} = req.rootUser;
+        const data = {
+            _id, name, email
+        }
+        if(!_id){
+            return res.status(400).json({err:"User Not Found"});
+        }
+        const userRoom = await UserRoom.find({userId:_id});
+        if(!userRoom){
+            return res.status(200).json({data:data , rooms:[]});
+        }
+        return res.status(200).json({data:data , rooms:userRoom});
+    }
+    catch(err){
+      return res.status(400).json({err:"Error on Profile page"});
+    }
 })
 
 router.get('/api', async (req, res) => {
-    //res.header('Access-Control-Allow-Origin', `http://localhost:3000`);
-
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
-    
     try {
-        // Query the database for all data
-
         let data;
         if(myCache.has("data")){
           data = JSON.parse(myCache.get("data"));  
         } 
         else{
-            data = await AlltheRoom.find();
+            data = await UserRoom.find({}).sort({ _id: -1 });
             myCache.set("data" , JSON.stringify(data));
         }
-
-        // to delete 
-        // myCache.del("data");
-        res.send(data);
+        return res.status(200).json({data:data});
     } catch (err) {
-        console.error(err);
-        res.status(500).send('Server Error');
+       return res.status(500).send('Server Error');
     }
 });
 
@@ -141,28 +155,19 @@ router.get('/api', async (req, res) => {
 
 router.get("/getcity", async (req, res) => {
     try {
-        const data = await AlltheRoom.find({});
-        const allRooms = data[0].allrooms;
+        const cities = await UserRoom.aggregate([
+            {
+              $group: {
+                _id: "$city", // Group by the city field
+                count: { $sum: 1 } // Count the number of occurrences for each city
+              }
+            },
+          ]);
 
-        // Use JavaScript to extract city names from the array of objects
-        const cityNames = allRooms.map(room => room.city.toLowerCase());
-
-        // Use JavaScript to count occurrences of each city
-        const cityCounts = cityNames.reduce((acc, city) => {
-            acc[city] = (acc[city] || 0) + 1;
-            return acc;
-        }, {});
-
-        // Convert the counts into an array of objects
-        const cityCountsArray = Object.keys(cityCounts).map(city => ({
-            city,
-            count: cityCounts[city]
-        }));
-        res.json(cityCountsArray);
-
+          return res.status(201).json({data:cities});
     }
     catch (error) {
-        res.status(500).send('Server Error');
+        return res.status(500).send('Server Error');
     }
 })
 
@@ -171,214 +176,128 @@ router.get("/getcity", async (req, res) => {
 
 
 
-router.post('/changePass', async (req, res) => {
-    try {
-        const { email, newpassword, cnewpassword } = req.body;
+// router.post('/changePass', async (req, res) => {
+//     try {
+//         const { email, newpassword, cnewpassword } = req.body;
 
-        const UserRegister = await User.findOne({ email: email });
+//         const UserRegister = await User.findOne({ email: email });
 
-        if (!UserRegister) {
-            return res.status(400).json({ error: 'Invalid  Email' });
-        }
+//         if (!UserRegister) {
+//             return res.status(400).json({ error: 'Invalid  Email' });
+//         }
 
-        if (newpassword !== cnewpassword) {
-            return res.status(400).json({ error: 'Password are not matching' });
-        }
-        UserRegister.password = newpassword;
-        UserRegister.cpassword = cnewpassword;
+//         if (newpassword !== cnewpassword) {
+//             return res.status(400).json({ error: 'Password are not matching' });
+//         }
+//         UserRegister.password = newpassword;
+//         UserRegister.cpassword = cnewpassword;
 
-        await UserRegister.save();
-        res.status(200).json({ message: 'Password reset successfully' });
-    }
-    catch (err) {
-        res.status(400).send(err);
-    }
-})
+//         await UserRegister.save();
+//         res.status(200).json({ message: 'Password reset successfully' });
+//     }
+//     catch (err) {
+//         res.status(400).send(err);
+//     }
+// })
 
 
 
 
 /// new code 
 
-router.post("/roomupload", async (req, res) => {
+router.post("/roomupload", authenticate , async (req, res) => {
     try {
-        const date = new Date();
-        const {
-            roomrenterName,
-            email,
-            country,
-            state,
-            city,
-            mobile,
-            place,
-            roomtype,
-            location,
-            price,
-        } = req.body;
+        const userId = req.userID;
+        const { roomrenterName, country, state,city,mobile,place,roomdetails,price} = req.body;
 
-        if (
-            !roomrenterName ||
-            !email ||
-            !country ||
-            !state ||
-            !city ||
-            !mobile ||
-            !place ||
-            !roomtype ||
-            !location ||
-            !price
-        ) {
-            res
-                .status(406)
-                .json({ error: "please fill all the details carefully" });
+        if (!roomrenterName ||!country || !state ||!city ||!mobile ||!place ||!roomdetails ||!price) {
+            return res.status(406).json({ error: "please fill all the details carefully" });
         } else {
-            const userRoom = await User.findOne({ email: email });
-            let allroomsdata = await AlltheRoom.findOne();
-            if (userRoom) {
-                const addUserRoom = await userRoom.addRoom(
-                    roomrenterName,
-                    country,
-                    state,
-                    city,
-                    mobile,
-                    place,
-                    roomtype,
-                    date,
-                    location,
-                    price
-                );
-
-                const referenceID = addUserRoom[0]._id;
-                const userId = userRoom._id;
-
-                if (!allroomsdata) {
-                    // If the collection is empty, create a new document
-                    allroomsdata = new AlltheRoom();
-                }
-
-                if (allroomsdata.allrooms) {
-                    allroomsdata.allrooms.unshift({
-                        roomrenterName,
-                        country,
-                        state,
-                        city,
-                        mobile,
-                        place,
-                        roomtype,
-                        date,
-                        location,
-                        price,
-                        referenceID,
-                        userId
-                    });
-
-                    await allroomsdata.save();
-                } else {
-                    allroomsdata.allrooms = [];
-                    const data = await allroomsdata.addAllRoomsinArray(
-                        roomrenterName,
-                        country,
-                        state,
-                        city,
-                        mobile,
-                        place,
-                        roomtype,
-                        date,
-                        location,
-                        price,
-                        referenceID,
-                        userId
-                    );
-                    await allroomsdata.save();
-                    
-                }
-
-               
-                await userRoom.save();
-                // deleting the chache
+                const newRoom = new UserRoom({roomrenterName,country,state , city , mobile , place , roomdetails ,price , userId});
+                await newRoom.save();
                 myCache.del("data");
                 res.status(201).json({ message: "Room added Successfully" });
             }
         }
-    } catch (err) {
+         catch (err) {
         res.status(500).json({ error: err.message });
     }
 });
 
 
 
-// router.delete('/api/myModel/:id', async (req, res) => {
-//     res.header('Access-Control-Allow-Origin', `http://localhost:3000`);
-//     try {
-//         //   const deletedData = await Postroom.findByIdAndRemove(req.params.id);
-//         const deletedData = await User.findByIdAndRemove(req.params.id);
-//         if (!deletedData) {
-//             return res.status(404).send('Data not found');
-//         }
-//         res.send(deletedData);
-//     } catch (error) {
-//         res.status(500).send(error.message);
-//     }
-// });
-
-
-
-router.delete('/delete/myModel/:id', async (req, res) => {
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
+router.delete('/delete/myModel/:id', authenticate , async (req, res) => {
     try {
-        const userId = req.query.userId;
+        const userId = req.userID; // Get the userId from the authenticated user
         const roomId = req.params.id;
 
-        const updatedUser = await User.findByIdAndUpdate(
-            userId,
-            { $pull: { rooms: { _id: roomId } } },
-            { new: true }
-        );
+        // Find the room by ID
+        const room = await UserRoom.findById(roomId);
 
-        if (!updatedUser) {
-            return res.status(404).send('User not found');
+        if (!room) {
+            return res.status(404).json({ mess: "Room not found" });
         }
 
-        // Delete from alltheRoomSchema
-        const updatedAllRooms = await AlltheRoom.updateMany(
-            { "allrooms.referenceID": roomId },
-            { $pull: { allrooms: { referenceID: roomId } } },
-            { new: true }
-        );
-        // deleting the chache
+        // Check if the userId matches the room's userId
+        if (room.userId.toString() !== userId.toString()) {
+            return res.status(403).json({ mess: "You are not authorized to delete this room" });
+        }
+
+        // Delete the room if the userId matches
+        await UserRoom.findByIdAndDelete(roomId);
         myCache.del("data");
-        res.send(updatedUser);
+
+        return res.status(200).json({ mess: "Room Deleted" });
     } catch (error) {
-        res.status(500).send(error.message);
+        res.status(500).json({err:"Error while deleting the data"});
     }
 });
 
 
 // feching the others user details
 router.get('/user/:id' , async (req , res)=>{
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
     try{
         const userId = req.params.id;
-        const user =await User.findById(userId);
-        res.status(200).json({mess:user})
+        const user =await User.findById(userId).select("name");
+        if(!user){
+            return res.status(400).json({err:"User Not found"});
+        }
+        const rooms = await UserRoom.find({userId});
+        if(!rooms){
+            return res.status(200).json({mess:user , rooms:[]});
+        }
+        return res.status(200).json({mess:user , rooms:rooms});
     }
     catch{
-        
         res.status(200).json({err:"error"})
+    }
+})
 
+router.get("/userroom/:id" , async (req , res)=>{
+    try{
+      const userId = req.params.id;
+      const userRoom = await UserRoom.find({userId});
+      return res.status(200).json({data:userRoom});
+    }
+    catch(err){
+        res.status(400).json({err:"Error"});
     }
 })
 
 
 router.get("/logout", (req, res) => {
-    res.header('Access-Control-Allow-Origin', `${process.env.LOCALPATH}`);
-    res.cookie("jwttoken", token, {
-        expires: 0,
-        httpOnly: true,
-        sameSite: 'none',
-        secure: true
-    });
-    res.status(200).send("user logout");
+    try{
+        res.cookie("jwttoken", '', {
+            expires: 0,
+            httpOnly: true,
+            sameSite: 'none',
+            secure: true
+        });
+        return res.status(200).json({data:"user logout"});
+    }
+    catch(err){
+        return res.status(401).json({err:"Error"});
+    }
 })
 
 

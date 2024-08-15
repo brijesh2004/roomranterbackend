@@ -1,7 +1,5 @@
 const mongoose = require("mongoose");
 const jwt = require("jsonwebtoken");
-const bcrypt = require("bcryptjs");
-const { type } = require("express/lib/response");
 require('dotenv').config();
 
 const userSchema = new mongoose.Schema({
@@ -11,180 +9,64 @@ const userSchema = new mongoose.Schema({
     },
     email: {
         type: String,
+        unique:true,
         required: true
     },
     password: {
         type: String,
         required: true
     },
-    cpassword: {
-        type: String,
-        required: true
+});
+
+
+const UserRoomSchema = new mongoose.Schema({
+    roomrenterName: {
+        type: String
     },
-    rooms: [
-        {
-            roomrenterName: {
-                type: String
-            },
-            country: {
-                type: String
-            },
-            state: {
-                type: String
-            },
-            city: {
-                type: String
-            },
-            mobile: {
-                type: String
-            },
-            place: {
-                type: String
-            },
-            roomtype: {
-                type: String
-            },
-            date: {
-                type: Date
-            },
-            location: {
-                type: String
-            },
-            price:{
-                type:String
-            }
-        }
-    ],
-
-    tokens: [
-        {
-            token: {
-                type: String,
-                required: true
-            }
-        }
-    ]
-
-});
-
-
-
-// for the room
-const alltheRoomSchema = new mongoose.Schema({
-    allrooms: [
-        {    
-            roomrenterName: {
-                type: String
-            },
-            country: {
-                type: String
-            },
-            state: {
-                type: String
-            },
-            city: {
-                type: String
-            },
-            mobile: {
-                type: String
-            },
-            place: {
-                type: String
-            },
-            roomtype: {
-                type: String
-            },
-            date: {
-                type: Date
-            },
-            location: {
-                type: String
-            },
-            price:{
-            type:String
-            },
-            referenceID:{
-                type:String,
-            },
-            userId:{
-                type:String
-            }
-        }
-    ]
-});
-
-const AlltheRoom = mongoose.model('AlltheRoom', alltheRoomSchema);
-
-alltheRoomSchema.methods.addAllRoomsinArray = async function (roomrenterName, country, state, city, mobile, place, roomtype, date, location,price , referenceID) {
-    try {
-        const newRoom = {
-            roomrenterName,
-            country,
-            state,
-            city,
-            mobile,
-            place,
-            roomtype,
-            date: new Date(date),
-            location,
-            price,
-            referenceID,
-            userId
-        };
-        this.allrooms.unshift(newRoom)
-        await this.save();
-        return this.allrooms;
-    } catch (err) {
-        throw err;
+    country: {
+        type: String
+    },
+    state: {
+        type: String
+    },
+    city: {
+        type: String
+    },
+    mobile: {
+        type: String
+    },
+    place: {
+        type: String
+    },
+    roomdetails: {
+        type: String,
+    },
+    price: {
+        type: String
+    },
+    CreatedAt:{
+        type:String,
+        default:Date.now
+    },
+    userId:{
+        type:String,
     }
-}
-
-userSchema.methods.addRoom = async function (roomrenterName, country, state, city, mobile, place, roomtype, date, location , price) {
-    try {
-        const newRooms = {
-            roomrenterName,
-            country,
-            state,
-            city,
-            mobile,
-            place,
-            roomtype,
-            date: new Date(date),
-            location,
-            price
-        }
-        this.rooms.unshift(newRooms);
-        await this.save();
-         return this.rooms;
-    } catch (err) {
-        throw err;
-    }
-}
-
-
-
-// hashing the password
-
-userSchema.pre('save' , async function(next){
-   if(this.isModified('password')){
-    this.password=await bcrypt.hash(this.password , 12);
-    this.cpassword = await bcrypt.hash(this.cpassword , 12);
-   }
-   next();
 })
 
-userSchema.methods.generateAutoToken = async function () {
-    try {
-        let token = jwt.sign({ _id: this._id }, `${process.env.TOKENKEY}`);
-        this.tokens = this.tokens.concat({ token: token });
-        await this.save();
-        return token;
-    } catch (err) {
-        throw err
-    }
-}
-
-const User = mongoose.model('user', userSchema);
 
 
-module.exports = { User , AlltheRoom };
+// userSchema.methods.generateAutoToken = async function () {
+//     try {
+//         let token = jwt.sign({ _id: this._id }, `${process.env.TOKENKEY}`);
+//         // this.tokens = this.tokens.concat({ token: token });
+//         // await this.save();
+//         return token;
+//     } catch (err) {
+//         throw err
+//     }
+// }
+
+const User = mongoose.model('alluser', userSchema);
+const UserRoom = mongoose.model("userroom" , UserRoomSchema);
+
+module.exports = { User, UserRoom };
