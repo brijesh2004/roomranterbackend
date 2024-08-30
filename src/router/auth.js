@@ -6,8 +6,6 @@ const router = express.Router();
 const bcrypt = require("bcryptjs");
 const cookieParser = require('cookie-parser');
 
-const NodeCache = require("node-cache");
-
 require("../db/conn");
 router.use(cookieParser());
 const secret = process.env.TOKENKEY;
@@ -23,7 +21,7 @@ router.use(
     })
 )
 
-const myCache = new NodeCache();
+
 
 
 router.get('/', (req, res) => {
@@ -137,16 +135,21 @@ router.get('/profile', authenticate, async (req, res) => {
 
 router.get('/api', async (req, res) => {
     try {
-        let data;
-        if(myCache.has("data")){
-          data = JSON.parse(myCache.get("data"));  
-        } 
-        else{
-            data = await UserRoom.find({}).sort({ _id: -1 });
-            myCache.set("data" , JSON.stringify(data));
-        }
-        return res.status(200).json({data:data});
+        // console.log(req.query);
+        let { page = 1, country, state, city, place } = req.query;
+        page = Number(page); 
+        const skip = (page - 1) * 3;
+
+        let query = {};
+        if (country) query.country = country;
+        if (state) query.state = state;
+        if (city) query.city = city;
+        if (place) query.place = new RegExp(place, 'i'); // Case-insensitive partial match for place
+
+        const data = await UserRoom.find(query).sort({ _id: -1 }).skip(skip).limit(3);
+        return res.status(200).json({ data });
     } catch (err) {
+        console.log(err);
        return res.status(500).send('Server Error');
     }
 });
@@ -215,7 +218,6 @@ router.post("/roomupload", authenticate , async (req, res) => {
         } else {
                 const newRoom = new UserRoom({roomrenterName,country,state , city , mobile , place , roomdetails ,price , userId});
                 await newRoom.save();
-                myCache.del("data");
                 res.status(201).json({ message: "Room added Successfully" });
             }
         }
@@ -245,8 +247,6 @@ router.delete('/delete/myModel/:id', authenticate , async (req, res) => {
 
         // Delete the room if the userId matches
         await UserRoom.findByIdAndDelete(roomId);
-        myCache.del("data");
-
         return res.status(200).json({ mess: "Room Deleted" });
     } catch (error) {
         res.status(500).json({err:"Error while deleting the data"});
