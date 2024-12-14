@@ -21,32 +21,43 @@ const userSchema = new mongoose.Schema({
 
 const UserRoomSchema = new mongoose.Schema({
     roomrenterName: {
-        type: String
+        type: String,
+        required:true,
     },
     country: {
-        type: String
+        type: String,
+        required:true,
     },
     state: {
-        type: String
+        type: String,
+        required:true,
     },
     city: {
-        type: String
+        type: String,
+        required:true,
     },
     mobile: {
-        type: String
+        type: Number,
+        required:true,
     },
     place: {
-        type: String
+        type: String,
+        required:true,
     },
     roomdetails: {
         type: String,
+        required:true,
     },
     price: {
-        type: String
+        type: Number,
+        required:true,
     },
     CreatedAt:{
         type:String,
         default:Date.now
+    },
+    images:{
+     type:[String]
     },
     userId:{
         type:String,
