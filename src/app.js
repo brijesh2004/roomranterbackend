@@ -1,16 +1,28 @@
 const express = require("express");
+const cors = require('cors');
+require("./db/conn");
+require('dotenv').config();
+const cookieParser = require('cookie-parser');
+const userrouter = require('./router/userroute');
+const roomsrouter = require('./router/roomsroute');
 
 const app = express();
-require("./db/conn");
-const PORT = process.env.PORT||7000
+const PORT = process.env.PORT||8000;
+app.use(cookieParser());
+app.use(
+    cors({
+        origin: `${process.env.LOCALPATH}`,
+        methods: ['GET', 'POST', 'DELETE', 'UPDATE'],
+        credentials: true
+    })
+)
+
 
 app.use(express.json());
-app.use(require('./router/auth'));
+app.use("/users" , userrouter);
+app.use("/rooms",roomsrouter);
 
 
-app.get("/",(req , res)=>{
-  res.send("Hello from the home side");
-})
 
 app.listen(PORT , ()=>{
     console.log(`Listening on the port Number ${PORT}`);
