@@ -34,7 +34,7 @@ const registerController = async (req , res)=>{
                 sameSite: 'none',
                 secure: true
             });
-            return res.status(201).json({ message: "User Registerd Successfully" });
+            return res.status(201).json({ message: "User Registerd Successfully" , user:user });
         }
     }
     catch (err) {

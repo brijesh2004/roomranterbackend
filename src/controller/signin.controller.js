@@ -28,7 +28,7 @@ const signInController = async (req , res)=>{
                  sameSite: 'none',
                  secure: true
              });
-             return res.json({ message: "user signin Successfully" });
+             return res.status(201).json({ message: "user signin Successfully" , user:userLogin});
          }
          else {
              res.status(400).json({ error: "invalid user credentials" });
